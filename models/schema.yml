@@ -4,6 +4,18 @@ sources:
   - name: raw
     schema: gz_raw_data
     tables:
+      - name: sales
+        identifier: raw_gz_sales
+        description: Raw sales data
+
+      - name: product
+        identifier: raw_gz_product
+        description: Raw product purchase price data
+
+      - name: ship
+        identifier: raw_gz_ship
+        description: Raw shipping and logistics data
+
       - name: adwords
         identifier: raw_gz_adwords
         description: Adwords advertising campaign raw data
@@ -21,110 +33,260 @@ sources:
         description: Facebook advertising campaign raw data
 
 models:
-    - name: stg_raw__adwords
-      description: Cleaned staging model for Adwords campaign data
-      columns:
-          - name: date_date
-            description: date of the campaign
-            tests:
-                - not_null
+  - name: stg_raw__sales
+    description: Cleaned staging model for raw sales data
+    columns:
+      - name: orders_id
+        tests:
+          - not_null
+      - name: date_date
+        tests:
+          - not_null
+      - name: products_id
+        tests:
+          - not_null
+      - name: revenue
+      - name: quantity
 
-          - name: paid_source
-            description: advertising sources
-            tests:
-                - not_null
+  - name: stg_raw__product
+    description: Cleaned staging model for raw product data
+    columns:
+      - name: products_id
+        tests:
+          - unique
+          - not_null
+      - name: purchase_price
+        tests:
+          - not_null
 
-          - name: campaign_key
-            description: campaign identifier
-            tests:
-                - not_null
-                          
-          - name: camPGN_name
-            description: campaign name
+  - name: stg_raw__ship
+    description: Cleaned staging model for raw shipping data
+    columns:
+      - name: orders_id
+        tests:
+          - unique
+          - not_null
+      - name: shipping_fee
+      - name: logCost
+      - name: ship_cost
 
-          - name: ads_cost
-            description: Advertising cost as float64
-            tests:
-                - not_null
+  - name: int_sales_margin
+    description: Sales data enriched with product purchase price and margin calculation
+    columns:
+      - name: orders_id
+        tests:
+          - not_null
+      - name: date_date
+        tests:
+          - not_null
+      - name: products_id
+        tests:
+          - not_null
+      - name: purchase_cost
+      - name: margin
 
-          - name: impression
-            description: number of ad impression
+  - name: int_orders_margin
+    description: Order-level margin aggregated from sales margin
+    columns:
+      - name: orders_id
+        tests:
+          - unique
+          - not_null
+      - name: date_date
+        tests:
+          - not_null
+      - name: revenue
+      - name: quantity
+      - name: purchase_cost
+      - name: margin
 
-          - name: click
-            description: number of ad clicks     
-                   
-            
-    - name: stg_raw__bing
-      description: Cleaned staging model for Bing campaign data
-      columns:
-          - name: date_date
-            tests:
-              - not_null
+  - name: int_orders_operational
+    description: Order-level operational margin including shipping and logistics costs
+    columns:
+      - name: orders_id
+        tests:
+          - unique
+          - not_null
+      - name: date_date
+        tests:
+          - not_null
+      - name: operational_margin
+      - name: quantity
+      - name: revenue
+      - name: purchase_cost
+      - name: margin
+      - name: shipping_fee
+      - name: logCost
+      - name: ship_cost
 
-          - name: paid_source
-            tests:
-              - not_null
+  - name: finance_days
+    description: Daily finance mart aggregated from operational orders
+    columns:
+      - name: date_date
+        tests:
+          - unique
+          - not_null
+      - name: nb_transactions
+      - name: revenue
+      - name: quantity
+      - name: purchase_cost
+      - name: margin
+      - name: shipping_fee
+      - name: log_cost
+      - name: ship_cost
+      - name: average_basket
+      - name: operational_margin
 
-          - name: campaign_key
-            tests:
-              - not_null
+  - name: stg_raw__adwords
+    description: Cleaned staging model for Adwords campaign data
+    columns:
+      - name: date_date
+        tests:
+          - not_null
+      - name: paid_source
+        tests:
+          - not_null
+      - name: campaign_key
+        tests:
+          - not_null
+      - name: campaign_name
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: camPGN_name
+  - name: stg_raw__bing
+    description: Cleaned staging model for Bing campaign data
+    columns:
+      - name: date_date
+        tests:
+          - not_null
+      - name: paid_source
+        tests:
+          - not_null
+      - name: campaign_key
+        tests:
+          - not_null
+      - name: campaign_name
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: ads_cost
-            tests:
-              - not_null
+  - name: stg_raw__criteo
+    description: Cleaned staging model for Criteo campaign data
+    columns:
+      - name: date_date
+        tests:
+          - not_null
+      - name: paid_source
+        tests:
+          - not_null
+      - name: campaign_key
+        tests:
+          - not_null
+      - name: campaign_name
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: ads_impression
+  - name: stg_raw__facebook
+    description: Cleaned staging model for Facebook campaign data
+    columns:
+      - name: date_date
+        tests:
+          - not_null
+      - name: paid_source
+        tests:
+          - not_null
+      - name: campaign_key
+        tests:
+          - not_null
+      - name: campaign_name
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: ads_clicks
- 
-    - name: stg_raw__criteo
-      description: Cleaned staging model for Criteo campaign data
-      columns:
-          - name: date_date
-            tests:
-              - not_null
+  - name: int_campaigns
+    description: Union of all advertising campaign staging models
+    columns:
+      - name: date_date
+        tests:
+          - not_null
+      - name: paid_source
+        tests:
+          - not_null
+      - name: campaign_key
+        tests:
+          - not_null
+      - name: campaign_name
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: paid_source
-            tests:
-              - not_null
+  - name: int_campaigns_day
+    description: Daily aggregated advertising campaign data
+    columns:
+      - name: date_date
+        tests:
+          - unique
+          - not_null
+      - name: ads_cost
+        tests:
+          - not_null
+      - name: ads_impression
+      - name: ads_clicks
 
-          - name: campaign_key
-            tests:
-              - not_null
+  - name: finance_campaigns_day
+    description: Daily finance mart enriched with advertising campaign data
+    columns:
+      - name: date
+        tests:
+          - unique
+          - not_null
+      - name: ads_margin
+        tests:
+          - not_null
+      - name: average_basket
+      - name: operational_margin
+      - name: ads_cost
+      - name: ads_impression
+      - name: ads_clicks
+      - name: quantity
+      - name: revenue
+      - name: purchase_cost
+      - name: margin
+      - name: shipping_fee
+      - name: log_cost
+      - name: ship_cost
 
-          - name: campaign_name
+  - name: finance_campaigns_month
+    description: Monthly finance mart enriched with advertising campaign data
+    columns:
+      - name: datemonth
+        tests:
+          - unique
+          - not_null
+      - name: ads_margin
+      - name: average_basket
+      - name: operational_margin
+      - name: ads_cost
+      - name: ads_impression
+      - name: ads_clicks
+      - name: quantity
+      - name: revenue
+      - name: purchase_cost
+      - name: margin
+      - name: shipping_fee
+      - name: log_cost
+      - name: ship_cost
 
-          - name: ads_cost
-            tests:
-              - not_null
 
-          - name: ads_impression
-
-          - name: ads_clicks
-
-    - name: stg_raw__facebook
-      description: Cleaned staging model for Facebook campaign data
-      columns:
-          - name: date_date
-            tests:
-              - not_null
-
-          - name: paid_source
-            tests:
-              - not_null
-
-          - name: campaign_key
-            tests:
-              - not_null
-
-          - name: campaign_name
-
-          - name: ads_cost
-            tests:
-              - not_null
-
-          - name: ads_impression
-
-          - name: ads_clicks

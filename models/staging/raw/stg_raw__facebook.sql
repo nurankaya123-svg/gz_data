@@ -14,8 +14,8 @@ renamed as (
         campaign_key,
         campgn_name as campaign_name,
         cast(ads_cost as float64) as ads_cost,
-        impression as ads_impression,
-        click as ads_clicks
+        impression,
+        click,
 
     from source
 
